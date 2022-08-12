@@ -4,17 +4,29 @@ package main
 import "net/http"
 
 type Tester struct {
-  Name String `json:"name"`
-  Job String `json:"job"`
-  ID String `json:"id"`
-  Relation String  `json:"relation"`
+  Name string `json:"name"`
+  Job string `json:"job"`
+  ID string `json:"id"`
+  Relation string  `json:"relation"`
   Station int `json:"station"`
 }
-func testHandler(w http.ResponseWriter, r *http.Request) {
+
+type testHandlers struct {
+  store map[string]Tester
+}
+func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
 
 }
+
+func newTestHandlers() *testHandlers{
+  return &testHandlers {
+    store: map[string]Tester{},
+  }
+}
+
 func main() {
-  http.HandleFunc("/testers", testHandler)
+  testHandlers := newTestHandlers()
+  http.HandleFunc("/testers", testHandlers.get)
   err := http.ListenAndServe(":8080", nil)
   if err != nil {
     panic(err)
