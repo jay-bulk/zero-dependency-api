@@ -1,7 +1,10 @@
 package main
 
 
-import "net/http"
+import (
+  "net/http"
+  "encoding/json"
+)
 
 type Tester struct {
   Name string `json:"name"`
@@ -15,12 +18,37 @@ type testHandlers struct {
   store map[string]Tester
 }
 func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
-
+  testers := make([]Tester, len(h.store))
+  i := 0
+  for _, tester := range h.store {
+    testers[i] = tester
+    i++
+  }
+  jsonBytes, err := json.Marshal(testers)
+  if err != nil {
+    // TODO
+  }
+  w.Write(jsonBytes)
 }
 
 func newTestHandlers() *testHandlers{
   return &testHandlers {
-    store: map[string]Tester{},
+    store: map[string]Tester{
+      "id1": Tester{
+        Name: "John Doe",
+        Station: 89,
+        ID: "113213",
+        Relation: "founderson",
+        Job: "technician",
+      },
+      "id2": Tester{
+        Name: "exzibit",
+        Station: 22,
+        ID: "1",
+        Relation: "none",
+        Job: "entertainer",
+      },
+    },
   }
 }
 
