@@ -17,6 +17,20 @@ type Tester struct {
 type testHandlers struct {
   store map[string]Tester
 }
+fun (h *testHandlers) testers(w http.ResponseWriter, r *htt.request) {
+  switch r.Method {
+  case "GET":
+    h.get(w, r)
+    return
+  case "POST":
+    h.post(w, r)
+    return
+  default:
+    w.WriteHeader(http.StatusMethodNotAllowed)
+    w.Write([]byte("Method not allowed"))
+    return
+  }
+}
 func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
   testers := make([]Tester, len(h.store))
   i := 0
@@ -32,6 +46,10 @@ func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
   w.Header().Add("content-type", "application/json")
   w.WriteHeader(http.StatusOK)
   w.Write(jsonBytes)
+}
+func (h *testHandlers) post(w http.ResponseWriter, r *http.Request) {
+  h.Lock()
+  defer h.Unlock()
 }
 
 func newTestHandlers() *testHandlers{
@@ -57,7 +75,7 @@ func newTestHandlers() *testHandlers{
 
 func main() {
   testHandlers := newTestHandlers()
-  http.HandleFunc("/testers", testHandlers.get)
+  http.HandleFunc("/testers", testHandlers.testers)
   err := http.ListenAndServe(":8080", nil)
   if err != nil {
     panic(err)
