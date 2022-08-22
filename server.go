@@ -1,11 +1,18 @@
 package main
-
-
 import (
   "net/http"
   "encoding/json"
+  "sync"
+  "io/ioutil"
+  "fmt"
+  "time"
 )
 
+//This is a "zero" dependency api
+//Based on kubucation video on youtub https://www.youtube.com/watch?v=1v11Ym6Ct9Q
+// RHETTB
+// watchTime = 27:01 
+// Music = not sure
 type Tester struct {
   Name string `json:"name"`
   Job string `json:"job"`
@@ -15,9 +22,10 @@ type Tester struct {
 }
 
 type testHandlers struct {
+  sync.Mutex
   store map[string]Tester
 }
-fun (h *testHandlers) testers(w http.ResponseWriter, r *htt.request) {
+func (h *testHandlers) testers(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
   case "GET":
     h.get(w, r)
@@ -52,8 +60,31 @@ func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
 func (h *testHandlers) post(w http.ResponseWriter, r *http.Request) {
   bodyBytes, err := ioutil.ReadAll(r.Body)
   defer r.Body.Close()
+  if err != nil {
+     w.WriteHeader(http.StatusInternalServerError)
+     w.Write([]byte(err.Error()))
+  }
+
+  ct := r.Header.Get("content-type")
+  if ct != "application/json" {
+     w.WriteHeader(http.StatusUnsupportedMediaType)
+     w.Write([]byte(fmt.Sprintf("need content-type 'application/json', not got '%s'", ct)))
+     return
+  }
+   
+  }
+  var tester Tester
+  err = json.Unmarshal(bodyBytes, &tester)
+  if err != nil {
+     w.WriteHeader(http.StatusBadRequest)
+     w.Write([]byte(err.Error()))
+  }
+
+  tester.ID = fmt.Sprintf("%d", time.Now().UnixNano())
   h.Lock()
+  h.store[tester.ID] = tester
   defer h.Unlock()
+  
 }
 
 func newTestHandlers() *testHandlers{
