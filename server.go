@@ -33,11 +33,13 @@ fun (h *testHandlers) testers(w http.ResponseWriter, r *htt.request) {
 }
 func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
   testers := make([]Tester, len(h.store))
+  h.Lock()
   i := 0
   for _, tester := range h.store {
     testers[i] = tester
     i++
   }
+  h.Unlock()
   jsonBytes, err := json.Marshal(testers)
   if err != nil {
     w.WriteHeader(http.StatusInternalServerError)
@@ -48,6 +50,8 @@ func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
   w.Write(jsonBytes)
 }
 func (h *testHandlers) post(w http.ResponseWriter, r *http.Request) {
+  bodyBytes, err := ioutil.ReadAll(r.Body)
+  defer r.Body.Close()
   h.Lock()
   defer h.Unlock()
 }
