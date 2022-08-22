@@ -12,7 +12,7 @@ import (
 //Based on kubucation video on youtub https://www.youtube.com/watch?v=1v11Ym6Ct9Q
 // RHETTB
 // watchTime = 27:01 
-// Music = not sure
+// Music = Future - Mask Off (Aesthetic Remix) 
 type Tester struct {
   Name string `json:"name"`
   Job string `json:"job"`
