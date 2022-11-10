@@ -11,23 +11,21 @@ import (
 )
 
 //This is a "zero" dependency api
-//Based on kubucation video on youtub https://www.youtube.com/watch?v=1v11Ym6Ct9Q
-// RHETTB
-// watchTime = 27:01 
-// Music = Future - Mask Off (Aesthetic Remix) 
-type Tester struct {
-  Name string `json:"name"`
-  Job string `json:"job"`
-  ID string `json:"id"`
-  Relation string  `json:"relation"`
-  Station int `json:"station"`
+//Based on kubucation video on youtube https://www.youtube.com/watch?v=1v11Ym6Ct9Q
+
+type Student struct {
+  Name string `json:"student"`
+  Job string `json:"role"`
+  ID string `json:"student_id"`
+  Class string  `json:"Class"`
+  Professor int `json:"Professor"`
 }
 
-type testHandlers struct {
+type studentHandlers struct {
   sync.Mutex
-  store map[string]Tester
+  store map[string]Student
 }
-func (h *testHandlers) testers(w http.ResponseWriter, r *http.Request) {
+func (h *StudentHandlers) students(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
   case "GET":
     h.get(w, r)
@@ -41,16 +39,16 @@ func (h *testHandlers) testers(w http.ResponseWriter, r *http.Request) {
     return
   }
 }
-func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
-  testers := make([]Tester, len(h.store))
+func (h *studentHandlers) get(w http.ResponseWriter, r *http.Request) {
+  students := make([]Student, len(h.store))
   h.Lock()
   i := 0
-  for _, tester := range h.store {
-    testers[i] = tester
+  for _, student := range h.store {
+    students[i] = student
     i++
   }
   h.Unlock()
-  jsonBytes, err := json.Marshal(testers)
+  jsonBytes, err := json.Marshal(student)
   if err != nil {
     w.WriteHeader(http.StatusInternalServerError)
     w.Write([]byte(err.Error()))
@@ -59,7 +57,7 @@ func (h *testHandlers) get(w http.ResponseWriter, r *http.Request) {
   w.WriteHeader(http.StatusOK)
   w.Write(jsonBytes)
 }
-func (h *testHandlers) getRandomTester(w http.ResponseWriter, r *http.request) {
+func (h *studentHandlers) getRandomStudent(w http.ResponseWriter, r *http.request) {
   ids := make([]string, len(h.store))
   h.Lock()
   i := 0
@@ -78,27 +76,27 @@ func (h *testHandlers) getRandomTester(w http.ResponseWriter, r *http.request) {
      rand.Seed(time.Now().UnixNano())
      target = ids[rand.Intn(len(ids))]
   }
-  w.Header().Add("location", fmt.Spring("/testers/%s", target))
+  w.Header().Add("location", fmt.Spring("/student/%s", target))
   w.WriteHeader(http.StatusFound)
 }
-func (h *testHandlers) getTester(w http.ResponseWriter, r *http.Request) {
+func (h *studentHandlers) getStudent(w http.ResponseWriter, r *http.Request) {
   parts := strings.Split(r.URL.String(), "/")
   if len(parts) != 3 {
     w.WriteHeader(http.StatusNotFound)
     return
   }
   if parts[2] == "random" {
-    h.getRandomTester(w,r)
+    h.getRandomStudent(w,r)
     return
   } 
   h.Lock()
-  tester, ok := h.store[parts[2]]
+  student, ok := h.store[parts[2]]
   h.Unlock()
   if !ok {
     w.WriteHeader(http.StatusNotFound)
     return
   }  
-    jsonByters, err := json.Marshal(tester)
+    jsonByters, err := json.Marshal(student)
     if err != nil {
       w.WriteHeader(http.StatusInternalServerError)
       w.Write([]byte(err.Error()))
@@ -108,7 +106,7 @@ func (h *testHandlers) getTester(w http.ResponseWriter, r *http.Request) {
     w.Write(jsonByters)
 }
 
-func (h *testHandlers) post(w http.ResponseWriter, r *http.Request) {
+func (h *studentHandlers) post(w http.ResponseWriter, r *http.Request) {
   bodyBytes, err := ioutil.ReadAll(r.Body)
   defer r.Body.Close()
   if err != nil {
@@ -125,30 +123,31 @@ func (h *testHandlers) post(w http.ResponseWriter, r *http.Request) {
   }
    
   
-  var tester Tester
-  err = json.Unmarshal(bodyBytes, &tester)
+  var student Student
+  err = json.Unmarshal(bodyBytes, &student)
   if err != nil {
      w.WriteHeader(http.StatusBadRequest)
      w.Write([]byte(err.Error()))
   }
 
-  tester.ID = fmt.Sprintf("%d", time.Now().UnixNano())
+  //Define a student id as a function of the epoc time that the function is called
+  student.ID = fmt.Sprintf("%d", time.Now().UnixNano())
   h.Lock()
-  h.store[tester.ID] = tester
+  h.store[student.ID] = student
   defer h.Unlock()
   
 }
 
-func newTestHandlers() *testHandlers{
-  return &testHandlers {
-    store: map[string]Tester{ },
+func newStudentHandlers() *studentHandlers{
+  return &studentHandlers {
+    store: map[string]Student{ },
   }
 }
 
 type adminPortal struct {
   password string
 }
-
+//Define admin login
 func newAdminPortal() *adminPortal {
   password := os.Getenv("ADMIN_PASSWORD")
   if password == "" {
@@ -170,9 +169,9 @@ func (a adminPortal) handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
   admin := newAdminPortal()
-  testHandlers := newTestHandlers()
-  http.HandleFunc("/testers", testHandlers.testers)
-  http.HandleFunc("/testers/", testHandlers.getTester)
+  studentHandlers := newStudentHandlers()
+  http.HandleFunc("/students", studentHandlers.students)
+  http.HandleFunc("/students/", studentHandlers.getStudent)
   http.HandleFunc("/admin", admin.handler)
   err := http.ListenAndServe(":8080", nil)
   if err != nil {
