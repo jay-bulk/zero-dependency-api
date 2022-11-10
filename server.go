@@ -13,6 +13,8 @@ import (
 //This is a "zero" dependency api
 //Based on kubucation video on youtube https://www.youtube.com/watch?v=1v11Ym6Ct9Q
 
+//Calls made to this API are held in memory not to any database
+
 type Student struct {
   Name string `json:"student"`
   Job string `json:"role"`
