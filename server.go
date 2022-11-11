@@ -1,3 +1,5 @@
+//This is a "zero" dependency api
+//Based on kubucation video on youtube https://www.youtube.com/watch?v=1v11Ym6Ct9Q
 package main
 import (
   "net/http"
@@ -10,10 +12,8 @@ import (
   "strings"
 )
 
-//This is a "zero" dependency api
-//Based on kubucation video on youtube https://www.youtube.com/watch?v=1v11Ym6Ct9Q
+//Calls made to this API are held in memory and are not sent to any database
 
-//Calls made to this API are held in memory not to any database
 
 type Student struct {
   Name string `json:"student"`
@@ -23,10 +23,12 @@ type Student struct {
   Professor int `json:"Professor"`
 }
 
+//Handlers are mutually exclusive (lockable/unlockable) can be locked/unlocked with .Lock(), .Unlock(); Can be used with defer (performs like an await in js)
 type studentHandlers struct {
   sync.Mutex
   store map[string]Student
 }
+
 func (h *StudentHandlers) students(w http.ResponseWriter, r *http.Request) {
   switch r.Method {
   case "GET":
@@ -41,6 +43,8 @@ func (h *StudentHandlers) students(w http.ResponseWriter, r *http.Request) {
     return
   }
 }
+
+//Get function as used above (h.get(w, r))
 func (h *studentHandlers) get(w http.ResponseWriter, r *http.Request) {
   students := make([]Student, len(h.store))
   h.Lock()
@@ -50,6 +54,8 @@ func (h *studentHandlers) get(w http.ResponseWriter, r *http.Request) {
     i++
   }
   h.Unlock()
+  
+  //json marshaling is Go's JSON encoding/decoding Marshal is to encode it Unmarshall is the decode
   jsonBytes, err := json.Marshal(student)
   if err != nil {
     w.WriteHeader(http.StatusInternalServerError)
@@ -59,6 +65,8 @@ func (h *studentHandlers) get(w http.ResponseWriter, r *http.Request) {
   w.WriteHeader(http.StatusOK)
   w.Write(jsonBytes)
 }
+
+//function for getting a random student from the array
 func (h *studentHandlers) getRandomStudent(w http.ResponseWriter, r *http.request) {
   ids := make([]string, len(h.store))
   h.Lock()
@@ -81,6 +89,8 @@ func (h *studentHandlers) getRandomStudent(w http.ResponseWriter, r *http.reques
   w.Header().Add("location", fmt.Spring("/student/%s", target))
   w.WriteHeader(http.StatusFound)
 }
+
+//Get information on a specific student (default) return value if the api call doesn't have a path specified
 func (h *studentHandlers) getStudent(w http.ResponseWriter, r *http.Request) {
   parts := strings.Split(r.URL.String(), "/")
   if len(parts) != 3 {
@@ -108,8 +118,10 @@ func (h *studentHandlers) getStudent(w http.ResponseWriter, r *http.Request) {
     w.Write(jsonByters)
 }
 
+//Create a new student object
 func (h *studentHandlers) post(w http.ResponseWriter, r *http.Request) {
   bodyBytes, err := ioutil.ReadAll(r.Body)
+  //Wait for the request Body Return
   defer r.Body.Close()
   if err != nil {
      w.WriteHeader(http.StatusInternalServerError)
@@ -124,7 +136,6 @@ func (h *studentHandlers) post(w http.ResponseWriter, r *http.Request) {
      return
   }
    
-  
   var student Student
   err = json.Unmarshal(bodyBytes, &student)
   if err != nil {
@@ -149,7 +160,8 @@ func newStudentHandlers() *studentHandlers{
 type adminPortal struct {
   password string
 }
-//Define admin login
+
+//Define admin login accessed via call to /admin
 func newAdminPortal() *adminPortal {
   password := os.Getenv("ADMIN_PASSWORD")
   if password == "" {
