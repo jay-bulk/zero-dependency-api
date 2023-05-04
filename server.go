@@ -1,5 +1,5 @@
 //This is a "zero" dependency api
-//Based on kubucation video on youtube https://www.youtube.com/watch?v=1v11Ym6Ct9Q
+//Based on kubucation
 package main
 import (
   "net/http"
